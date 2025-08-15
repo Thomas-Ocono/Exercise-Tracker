@@ -53,6 +53,16 @@ app.post("/api/users", (req, res) => {
   makeNewUser(inputText);
   res.send("Made new user");
 });
+
+app.get("/api/users", async (req, res) => {
+  let userArray = [];
+  const userList = await user.find();
+  for (let i = 0; i < userList.length; i++) {
+    userArray.push({ username: userList[i].name, _id: userList[i]._id });
+  }
+
+  res.send(userArray);
+});
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log("Your app is listening on port " + listener.address().port);
 });
