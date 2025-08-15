@@ -43,15 +43,28 @@ const makeNewUser = async (inputName) => {
   }
 };
 
+const findUserByName = async (inputName) => {
+  try {
+    let foundUser = await user.find({ name: inputName });
+    let foundUserInfo = { name: foundUser[0].name, _id: foundUser[0]._id };
+    return foundUserInfo;
+  } catch (err) {
+    console.error(err);
+    console.log("somethin fucked up");
+  }
+};
+//req and res
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/views/index.html");
 });
 
-app.post("/api/users", (req, res) => {
+app.post("/api/users", async (req, res) => {
   const inputText = req.body.username;
   console.log(inputText);
   makeNewUser(inputText);
-  res.send("Made new user");
+  let newUserInfo = await findUserByName(inputText);
+  let responseInfo = { username: newUserInfo.name, _id: newUserInfo._id };
+  res.send(responseInfo);
 });
 
 app.get("/api/users", async (req, res) => {
