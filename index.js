@@ -46,7 +46,7 @@ const makeNewUser = async (inputName) => {
 const findUserByName = async (inputName) => {
   try {
     let foundUser = await user.find({ name: inputName });
-    let foundUserInfo = { name: foundUser[0].name, _id: foundUser[0]._id };
+    let foundUserInfo = { name: foundUser.name, _id: foundUser._id };
     return foundUserInfo;
   } catch (err) {
     console.error(err);
@@ -73,9 +73,78 @@ app.get("/api/users", async (req, res) => {
   for (let i = 0; i < userList.length; i++) {
     userArray.push({ username: userList[i].name, _id: userList[i]._id });
   }
-
   res.send(userArray);
 });
+
+//exercises schema and model
+const exerciseSchema = new mongoose.Schema({
+  userId: {
+    type: String,
+    required: true,
+  },
+  description: {
+    type: String,
+    required: true,
+  },
+  duration: {
+    type: String,
+    required: true,
+  },
+  date: {
+    type: String,
+    required: true,
+  },
+});
+const exercise = mongoose.model("exercise", exerciseSchema);
+
+const createNewExercise = async (
+  inputId,
+  inputDescription,
+  inputDuration,
+  inputDate
+) => {
+  const newExercise = new exercise({
+    userId: inputId,
+    description: inputDescription,
+    duration: inputDuration,
+    date: inputDate,
+  });
+  try {
+    newExercise.save();
+    console.log("New exercise added");
+  } catch (err) {
+    console.error(err);
+    console.log("New exercise fucked up, fix this");
+  }
+};
+
+app.post("/api/users/:_id/exercises", async (req, res) => {
+  const id = req.params._id;
+  const input = req.body;
+  if (input.date == "") {
+    input.date = new Date().toDateString();
+  }
+  try {
+    const foundUser = await user.findById(id);
+    if (!foundUser) {
+      res.send("No user with that ID found");
+    } else {
+      createNewExercise(id, input.description, input.duration, input.date);
+      const returnInfo = {
+        username: foundUser.name,
+        description: input.description,
+        duration: input.duration,
+        date: input.date,
+        _id: id,
+      };
+      res.send(returnInfo);
+    }
+  } catch (err) {
+    console.error(err);
+    console.log("Fucky wucky saving exercise");
+  }
+});
+
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log("Your app is listening on port " + listener.address().port);
 });
