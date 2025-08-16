@@ -114,14 +114,27 @@ app.post("/api/users/:_id/exercises", async (req, res) => {
 
 app.get("/api/users/:_id/logs", async (req, res) => {
   const id = req.params._id;
+  const limit = req.query.limit;
+  console.log(limit);
   try {
     const foundUser = await user.findById(id);
     if (!foundUser) {
       res.send("No user with that Id");
     }
     console.log("found user: " + foundUser.username);
-    const foundExercises = await exercise.find({ userId: id });
-    console.log(foundExercises);
+    let foundExercises = await exercise.find({ userId: id });
+
+    if (limit != null) {
+      console.log("There is a limit");
+      let limitExercises = [];
+      for (let i = 0; i < limit; i++) {
+        if (foundExercises[i] != null) {
+          limitExercises.push(foundExercises[i]);
+        }
+      }
+      foundExercises = limitExercises;
+    }
+
     const returnInfo = {
       username: foundUser.username,
       count: foundExercises.length,
