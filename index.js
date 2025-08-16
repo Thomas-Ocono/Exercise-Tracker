@@ -112,6 +112,27 @@ app.post("/api/users/:_id/exercises", async (req, res) => {
   }
 });
 
+app.get("/api/users/:_id/logs", async (req, res) => {
+  const id = req.params._id;
+  try {
+    const foundUser = await user.findById(id);
+    if (!foundUser) {
+      res.send("No user with that Id");
+    }
+    console.log("found user: " + foundUser.username);
+    const foundExercises = await exercise.find({ userId: id });
+    console.log(foundExercises);
+    const returnInfo = {
+      username: foundUser.username,
+      count: foundExercises.length,
+      log: foundExercises,
+    };
+    res.send(returnInfo);
+  } catch (err) {
+    console.error(err);
+  }
+});
+
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log("Your app is listening on port " + listener.address().port);
 });
