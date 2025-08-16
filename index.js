@@ -22,56 +22,36 @@ connectToDB();
 
 //user schema and model
 const userSchema = new mongoose.Schema({
-  name: {
+  username: {
     type: String,
     required: true,
   },
 });
 const user = mongoose.model("user", userSchema);
 
-// create new user on db
-const makeNewUser = async (inputName) => {
-  const newUser = new user({
-    name: inputName,
-  });
-  try {
-    newUser.save();
-    console.log("New user created");
-  } catch (err) {
-    console.error(err);
-    console.log("shits fucked");
-  }
-};
-
-const findUserByName = async (inputName) => {
-  try {
-    let foundUser = await user.find({ name: inputName });
-    let foundUserInfo = { name: foundUser.name, _id: foundUser._id };
-    return foundUserInfo;
-  } catch (err) {
-    console.error(err);
-    console.log("somethin fucked up");
-  }
-};
 //req and res
 app.get("/", (req, res) => {
   res.sendFile(__dirname + "/views/index.html");
 });
 
 app.post("/api/users", async (req, res) => {
-  const inputText = req.body.username;
-  console.log(inputText);
-  makeNewUser(inputText);
-  let newUserInfo = await findUserByName(inputText);
-  let responseInfo = { username: newUserInfo.name, _id: newUserInfo._id };
-  res.send(responseInfo);
+  const newUser = new user({
+    username: req.body.username,
+  });
+  try {
+    const savedUser = await newUser.save();
+    res.json(savedUser);
+  } catch (err) {
+    console.error(err);
+    console.log("Fuckup saving new user");
+  }
 });
 
 app.get("/api/users", async (req, res) => {
   let userArray = [];
   const userList = await user.find();
   for (let i = 0; i < userList.length; i++) {
-    userArray.push({ username: userList[i].name, _id: userList[i]._id });
+    userArray.push({ username: userList[i].username, _id: userList[i]._id });
   }
   res.send(userArray);
 });
@@ -87,7 +67,7 @@ const exerciseSchema = new mongoose.Schema({
     required: true,
   },
   duration: {
-    type: String,
+    type: Number,
     required: true,
   },
   date: {
@@ -97,47 +77,34 @@ const exerciseSchema = new mongoose.Schema({
 });
 const exercise = mongoose.model("exercise", exerciseSchema);
 
-const createNewExercise = async (
-  inputId,
-  inputDescription,
-  inputDuration,
-  inputDate
-) => {
-  const newExercise = new exercise({
-    userId: inputId,
-    description: inputDescription,
-    duration: inputDuration,
-    date: inputDate,
-  });
-  try {
-    newExercise.save();
-    console.log("New exercise added");
-  } catch (err) {
-    console.error(err);
-    console.log("New exercise fucked up, fix this");
-  }
-};
-
 app.post("/api/users/:_id/exercises", async (req, res) => {
   const id = req.params._id;
   const input = req.body;
-  if (input.date == "") {
-    input.date = new Date().toDateString();
+  console.log(input);
+  if (input.date == "" || input.date == null) {
+    input.date = new Date();
+    console.log(input.date.toDateString());
   }
   try {
     const foundUser = await user.findById(id);
     if (!foundUser) {
       res.send("No user with that ID found");
     } else {
-      createNewExercise(id, input.description, input.duration, input.date);
-      const returnInfo = {
-        username: foundUser.name,
+      const saveExercise = new exercise({
+        userId: foundUser._id,
+        username: foundUser.username,
         description: input.description,
         duration: input.duration,
-        date: input.date,
-        _id: id,
-      };
-      res.send(returnInfo);
+        date: new Date(input.date).toDateString(),
+      });
+      const savedExercise = await saveExercise.save();
+      res.json({
+        _id: foundUser._id,
+        username: foundUser.username,
+        description: savedExercise.description,
+        duration: savedExercise.duration,
+        date: savedExercise.date,
+      });
     }
   } catch (err) {
     console.error(err);
