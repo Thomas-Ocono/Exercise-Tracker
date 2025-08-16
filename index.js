@@ -80,10 +80,8 @@ const exercise = mongoose.model("exercise", exerciseSchema);
 app.post("/api/users/:_id/exercises", async (req, res) => {
   const id = req.params._id;
   const input = req.body;
-  console.log(input);
   if (input.date == "" || input.date == null) {
     input.date = new Date();
-    console.log(input.date.toDateString());
   }
   try {
     const foundUser = await user.findById(id);
@@ -113,19 +111,45 @@ app.post("/api/users/:_id/exercises", async (req, res) => {
 });
 
 app.get("/api/users/:_id/logs", async (req, res) => {
+  console.log("Log Request");
   const id = req.params._id;
   const limit = req.query.limit;
-  console.log(limit);
+  const fromQuery = req.query.from;
+  const toQuery = req.query.to;
+
   try {
     const foundUser = await user.findById(id);
     if (!foundUser) {
       res.send("No user with that Id");
     }
-    console.log("found user: " + foundUser.username);
     let foundExercises = await exercise.find({ userId: id });
 
+    if (fromQuery != null) {
+      console.log("fromQuery: " + fromQuery);
+      const fromDate = new Date(fromQuery);
+      let fromExercises = [];
+      for (let i = 0; i < foundExercises.length; i++) {
+        if (new Date(foundExercises[i].date) > fromDate) {
+          fromExercises.push(foundExercises[i]);
+        }
+      }
+      foundExercises = fromExercises;
+    }
+
+    if (toQuery != null) {
+      console.log("toQuery: " + toQuery);
+      const toDate = new Date(toQuery);
+      let toExercises = [];
+      for (let i = 0; i < foundExercises.length; i++) {
+        if (new Date(foundExercises[i].date) < toDate) {
+          toExercises.push(foundExercises[i]);
+        }
+      }
+      foundExercises = toExercises;
+    }
+
     if (limit != null) {
-      console.log("There is a limit");
+      console.log("limit: " + limit);
       let limitExercises = [];
       for (let i = 0; i < limit; i++) {
         if (foundExercises[i] != null) {
@@ -140,6 +164,7 @@ app.get("/api/users/:_id/logs", async (req, res) => {
       count: foundExercises.length,
       log: foundExercises,
     };
+    console.log(returnInfo);
     res.send(returnInfo);
   } catch (err) {
     console.error(err);
